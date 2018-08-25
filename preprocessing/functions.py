@@ -1,5 +1,3 @@
-# # music21 and data preprocessing tests
-
 import music21
 import copy
 
@@ -59,9 +57,12 @@ def get12ToneDegreeFromKeyNoteAcc(scorekey, note_degree_acc):
 def getScoreDict(myscore):
     noteschords = [music21.note.Note, music21.chord.Chord]
     
-    
     parts_dicts = []
     parts_times = []
+    
+    key_analyzer = music21.analysis.discrete.KrumhanslSchmuckler()
+    scorekey = key_analyzer.getSolution(myscore)
+    
     for scorepart in myscore.parts:
         #for each part, build a dictionary {time: note}
         part_dict = {}
@@ -69,27 +70,50 @@ def getScoreDict(myscore):
             thingtype = type(thing)
             
             if thingtype == music21.key.Key:
-                scorekey = thing
+                scorekey = thing #get the key defined in the score itself if the midi source already has a Key defined (instead of using the algo-guessed key)
             
             if thingtype == noteschords[0]:
-                #part_dict[thing.offset] = thing
                 part_dict[thing.offset] = get12ToneDegreeFromKeyNoteAcc(scorekey, scorekey.getScaleDegreeAndAccidentalFromPitch(thing.pitches[0]))
+                
+            elif thingtype == noteschords[1]: #if we're dealing with a chord
+                chordtones = []
+                for chordtone in thing.scaleDegrees:
+                    chordtones.append(get12ToneDegreeFromKeyNoteAcc(scorekey, chordtone))
+                part_dict[thing.offset] = chordtones[::-1]
+                #Chord objects store notes from low to high. While we read high notes from high to low.
+                #if a Chord object is found at the time 'offset', then the partdict at this key will contain a list, instead of a single integer from 0 to 11.
         
         parts_dicts.append(part_dict)
         parts_times.append(list(part_dict.keys()))
     
     all_times = list(set().union(*parts_times))
     all_notes = []
+    max_polyphony = 0
     
     for ts in all_times:
-        notes_at_ts = [] #this list has 4 elements, each is a note played at this time ts or -1 if no note found in a part.
+        notes_at_ts = [] #each is a note played at this time ts or -1 if no note found in a part.
         for partnum in range(len(parts_dicts)):
             if ts in parts_times[partnum]: #if this timestamp is present in this part
-                notes_at_ts.append(parts_dicts[partnum][ts]) #add into the timestamp the note played at that time in that part
+                note_or_notes = parts_dicts[partnum][ts]
+                if type(note_or_notes) == list: #if we're dealing with a chord stack: a note list
+                    for chordtone in note_or_notes:
+                        notes_at_ts.append(chordtone) #append each of the chordtones into the list.
+                else:
+                    notes_at_ts.append(note_or_notes) #add into the timestamp the note played at that time in that part
             else:
                 notes_at_ts.append(-1)
         
+        if len(notes_at_ts) > max_polyphony:
+            max_polyphony = len(notes_at_ts)
+        
         all_notes.append(notes_at_ts)
+    
+    #because chords and more than 4 parts can get involved, we must find out the thickest stack of notes and pad everything else to match that thiccness.
+    #the max_polyphony variable calculated this as we went through the loop to build all_notes.
+    #now we can pad everything with -1s
+    for notestack in all_notes:
+        while len(notestack) < max_polyphony:
+            notestack.append(-1)
     
     all_times_index = [n for n in range(len(all_times))]
     
