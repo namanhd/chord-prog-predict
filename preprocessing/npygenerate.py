@@ -2,14 +2,17 @@ import functions as prepfuncs
 import os
 import numpy as np
 
-_, _, fileslist = os.walk("midifiles")
+SUBSEQLEN = 8
+
+for root, dirs, files in os.walk("midifiles"):
+    fileslist = list(files)
 
 master_melody_array = []
 master_chords_array = []
 master_output_array = []
 
 for file in fileslist:
-    mel_subseqs, cho_subseqs_trunc, cho_popped = prepfuncs.getArraysFromMidi
+    mel_subseqs, cho_subseqs_trunc, cho_popped = prepfuncs.getArraysFromMidi("midifiles/"+file, SUBSEQLEN)
     master_melody_array += mel_subseqs
     master_chords_array += cho_subseqs_trunc
     master_output_array += master_output_array
