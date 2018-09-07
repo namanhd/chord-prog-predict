@@ -66,7 +66,7 @@ def getScoreDict(myscore):
     for scorepart in myscore.parts:
         #for each part, build a dictionary {time: note}
         part_dict = {}
-        for thing in scorepart:
+        for thing in scorepart.flat:
             thingtype = type(thing)
             
             if thingtype == music21.key.Key:
@@ -187,3 +187,28 @@ def convertToOneHots(melOrChordList):
         list_1h.append(getOneHotFrom12ToneDegrees(thing))
     
     return list_1h
+
+    
+# a function to wrap everything together
+def getArraysFromMidi(midipath):
+    print("-------Processing file {}--------".format(midipath))
+    print("Parsing")
+    myscore = music21.converter.parse(midipath)
+    
+    print("Getting scoredict")
+    scoredict = getScoreDict(myscore)
+    
+    print("Extracting melody and chords")
+    melodylist, chordslist = getMelodyAndChordsFromScoreDict(scoredict)
+    
+    print("Generating one hot encoded subsequences for melody")
+    melodylist_1h = convertToOneHots(melodylist)
+    mel_subseqs = subseq(melodylist_1h, subseqlen)
+    
+    print("Generating one hot encoded subsequences of chords (truncd) and popped chords")
+    chordslist_1h = convertToOneHots(chordslist)
+    cho_subseqs = subseq(chordslist_1h, subseqlen)
+    cho_subseqs_trunc, poppedchords = getTruncatedChordSeqs(cho_subseqs)
+    
+    print("-------Done. Returning result-----")
+    return mel_subseqs, cho_subseqs_trunc, poppedchords
