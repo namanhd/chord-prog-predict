@@ -13,7 +13,8 @@ def get12ToneDegreeFromKeyNoteAcc(scorekey, note_degree_acc):
                 # for natural minor, the 2.5 becomes 3 (II# is III), 5.5 becomes 6 (V# is VI)
                 
     if scorekey.mode == 'major':
-        tonemap = {1.0: 0,
+        tonemap = {0.5: 11,
+                   1.0: 0,
                    1.5: 1,
                    2.0: 2,
                    2.5: 3,
@@ -30,7 +31,8 @@ def get12ToneDegreeFromKeyNoteAcc(scorekey, note_degree_acc):
                   }
     
     elif scorekey.mode == 'minor':
-        tonemap = {1.0: 0,
+        tonemap = {0.5: 11,
+                   1.0: 0,
                    1.5: 1,
                    2.0: 2,
                    2.5: 3,
@@ -53,9 +55,12 @@ def get12ToneDegreeFromKeyNoteAcc(scorekey, note_degree_acc):
 # key = all unique timestamps across all four parts. Essentially, each key value pair will be a NOTE STACK in the midi at that key timestamp.
 # If a part does not have any notes in some timestamp (this happens when there's a short duration when not all of the parts play notes together), we can pad them with special -1 notes which will encode into a Completely Zeroed Out Note Vector.
 
+def getChordScaleDegrees(mychord, scorekey):
+    return [scorekey.getScaleDegreeAndAccidentalFromPitch(p) for p in mychord.pitches]
 
 def getScoreDict(myscore):
     noteschords = [music21.note.Note, music21.chord.Chord]
+    
     
     parts_dicts = []
     parts_times = []
@@ -66,18 +71,24 @@ def getScoreDict(myscore):
     for scorepart in myscore.parts:
         #for each part, build a dictionary {time: note}
         part_dict = {}
+        
+        
         for thing in scorepart.flat:
             thingtype = type(thing)
             
-            if thingtype == music21.key.Key:
-                scorekey = thing #get the key defined in the score itself if the midi source already has a Key defined (instead of using the algo-guessed key)
             
-            if thingtype == noteschords[0]:
-                part_dict[thing.offset] = get12ToneDegreeFromKeyNoteAcc(scorekey, scorekey.getScaleDegreeAndAccidentalFromPitch(thing.pitches[0]))
+            if thingtype == music21.key.Key:
+                scorekey = thing
                 
-            elif thingtype == noteschords[1]: #if we're dealing with a chord
+                
+            if thingtype == noteschords[0]:
+                #part_dict[thing.offset] = thing
+                part_dict[thing.offset] = get12ToneDegreeFromKeyNoteAcc(scorekey, scorekey.getScaleDegreeAndAccidentalFromPitch(thing.pitches[0]))
+            
+            elif thingtype == noteschords[1]: #if we're dealing with a chord    
+                
                 chordtones = []
-                for chordtone in thing.scaleDegrees:
+                for chordtone in getChordScaleDegrees(thing, scorekey):
                     chordtones.append(get12ToneDegreeFromKeyNoteAcc(scorekey, chordtone))
                 part_dict[thing.offset] = chordtones[::-1]
                 #Chord objects store notes from low to high. While we read high notes from high to low.
@@ -99,7 +110,7 @@ def getScoreDict(myscore):
                     for chordtone in note_or_notes:
                         notes_at_ts.append(chordtone) #append each of the chordtones into the list.
                 else:
-                    notes_at_ts.append(note_or_notes) #add into the timestamp the note played at that time in that part
+                    notes_at_ts.append(parts_dicts[partnum][ts]) #add into the timestamp the note played at that time in that part
             else:
                 notes_at_ts.append(-1)
         
@@ -111,6 +122,8 @@ def getScoreDict(myscore):
     #because chords and more than 4 parts can get involved, we must find out the thickest stack of notes and pad everything else to match that thiccness.
     #the max_polyphony variable calculated this as we went through the loop to build all_notes.
     #now we can pad everything with -1s
+    #note: maybe this padding is not needed since all the note stacks are lumped together into a onehot of 12 anyway
+    #but whatever
     for notestack in all_notes:
         while len(notestack) < max_polyphony:
             notestack.append(-1)
@@ -190,7 +203,7 @@ def convertToOneHots(melOrChordList):
 
     
 # a function to wrap everything together
-def getArraysFromMidi(midipath):
+def getArraysFromMidi(midipath, subseqlen):
     print("-------Processing file {}--------".format(midipath))
     print("Parsing")
     myscore = music21.converter.parse(midipath)
