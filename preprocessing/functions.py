@@ -81,7 +81,7 @@ def getScoreDict(myscore):
                 scorekey = thing
                 
                 
-            if thingtype == noteschords[0]:
+            if thingtype == noteschords[0]: #if we're dealing with a note
                 #part_dict[thing.offset] = thing
                 part_dict[thing.offset] = get12ToneDegreeFromKeyNoteAcc(scorekey, scorekey.getScaleDegreeAndAccidentalFromPitch(thing.pitches[0]))
             
@@ -97,7 +97,7 @@ def getScoreDict(myscore):
         parts_dicts.append(part_dict)
         parts_times.append(list(part_dict.keys()))
     
-    all_times = list(set().union(*parts_times))
+    all_times = sorted(list(set().union(*parts_times))) #a sorted list of all unique timestamps in the score
     all_notes = []
     max_polyphony = 0
     
@@ -110,9 +110,9 @@ def getScoreDict(myscore):
                     for chordtone in note_or_notes:
                         notes_at_ts.append(chordtone) #append each of the chordtones into the list.
                 else:
-                    notes_at_ts.append(parts_dicts[partnum][ts]) #add into the timestamp the note played at that time in that part
+                    notes_at_ts.append(parts_dicts[partnum][ts]) #if just a single note, add into the timestamp the note played at that time in that part
             else:
-                notes_at_ts.append(-1)
+                notes_at_ts.append(-1) #if no note or chord found, add at the timestamp the value (-1)
         
         if len(notes_at_ts) > max_polyphony:
             max_polyphony = len(notes_at_ts)
@@ -128,9 +128,9 @@ def getScoreDict(myscore):
         while len(notestack) < max_polyphony:
             notestack.append(-1)
     
-    all_times_index = [n for n in range(len(all_times))]
+    all_times_index = [n for n in range(len(all_times))] #we need to do this instead of just using the all_times as the keys, because with non-int keys, some keys are just skipped
     
-    return dict(zip(all_times_index, all_notes))
+    return dict(zip(all_times_index, all_notes)), all_times
 
 
 # After we obtain the dict of `{timestamp: [list of note_12t_deg played by each part]}`, we can then parse it as follows
@@ -203,13 +203,13 @@ def convertToOneHots(melOrChordList):
 
     
 # a function to wrap everything together
-def getArraysFromMidi(midipath, subseqlen):
+def getArraysFromMidi(midipath, subseqlen, isfortraining):
     print("-------Processing file {}--------".format(midipath))
     print("Parsing")
     myscore = music21.converter.parse(midipath)
     
     print("Getting scoredict")
-    scoredict = getScoreDict(myscore)
+    scoredict, timestamps = getScoreDict(myscore)
     
     print("Extracting melody and chords")
     melodylist, chordslist = getMelodyAndChordsFromScoreDict(scoredict)
@@ -221,7 +221,11 @@ def getArraysFromMidi(midipath, subseqlen):
     print("Generating one hot encoded subsequences of chords (truncd) and popped chords")
     chordslist_1h = convertToOneHots(chordslist)
     cho_subseqs = subseq(chordslist_1h, subseqlen)
-    cho_subseqs_trunc, poppedchords = getTruncatedChordSeqs(cho_subseqs)
     
     print("-------Done. Returning result-----")
-    return mel_subseqs, cho_subseqs_trunc, poppedchords
+    
+    if isfortraining == True:
+        cho_subseqs_trunc, poppedchords = getTruncatedChordSeqs(cho_subseqs)
+        return mel_subseqs, cho_subseqs_trunc, poppedchords
+    else: #if we're using this func to convert midis to predict chords instead of to preproc training data
+        return melodylist_1h, chordslist_1h, timestamps

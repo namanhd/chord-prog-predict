@@ -12,7 +12,7 @@ master_chords_array = []
 master_output_array = []
 
 for file in fileslist:
-    mel_subseqs, cho_subseqs_trunc, cho_popped = prepfuncs.getArraysFromMidi("midifiles/"+file, SUBSEQLEN)
+    mel_subseqs, cho_subseqs_trunc, cho_popped = prepfuncs.getArraysFromMidi("midifiles/"+file, SUBSEQLEN, True)
     master_melody_array += mel_subseqs
     master_chords_array += cho_subseqs_trunc
     master_output_array += cho_popped
