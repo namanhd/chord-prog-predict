@@ -11,6 +11,12 @@ def getChordArrayFromPrediction(pred, chordlen):
         returnchord[i] = 1
     return returnchord #type np ndarray
 
+#this is to attempt to predict without any seed chords:
+#"seed" the first SUBSEQLEN chords using the melody notes themselves, no sugar on top
+def seedFirstChords(melodylist, chordslist, subseqlen):
+    for i in range(subseqlen):
+        chordslist[i] = melodylist[i]
+
 #iterate over subsequences of the melody and the chords. Update the chord list on the fly with the newly predicted chord. Then predict on the next subseq.
 def predictOnArrays(kerasmodel, melodylist, chordslist, subseqlen, chordlen):
     melodyarray = np.array(melodylist)
@@ -76,8 +82,8 @@ def writeToMidi(outputfile, timestamps, melodylist, chordslist, scorekey):
         chordChord.quarterLength = t[0]
         chordsPart.append(chordChord)
     
-    myScore.insert(0, melodyPart)
-    myScore.insert(0, chordsPart)
+    myScore.insert(timestamps[0], melodyPart)
+    myScore.insert(timestamps[0], chordsPart)
     
     #myScore.show("text")
     

@@ -93,7 +93,7 @@ def convertToOneHots(melOrChordList):
     copied_list = np.copy(melOrChordList)
     list_1h = np.empty((len(copied_list),12), dtype=int)
     for i in range(len(copied_list)):
-        list_1h[i] = getOneHotFrom12ToneDegreesNp(copied_list[i])
+        list_1h[i] = getOneHotFrom12ToneDegrees(copied_list[i])
     return list_1h
     
 def getArraysFromMidi(midipath, subseqlen, isfortraining, **kwargs): #accepts kwarg: key="some key". e.g. getScoreDict(myscore, key='C#') for C#maj, or key='c' for C minor 
