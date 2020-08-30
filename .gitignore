@@ -5,3 +5,5 @@ attempt-1/midifiles/
 *.npy
 *.h5
 *.h5df
+*.mid
+*.pyc

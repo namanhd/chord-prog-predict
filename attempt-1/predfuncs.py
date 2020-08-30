@@ -65,7 +65,7 @@ def writeToMidi(outputfile, timestamps, melodylist, chordslist, scorekey):
     melodyPart = music21.stream.Voice()
     chordsPart = music21.stream.Voice()
     durations = [j-i for i, j in zip(timestamps[:-1], timestamps[1:])]
-    durations.append(1) #default length of 1 quarter-note for the last note
+    durations.append(2) #default length of 2 quarter-notes for the last note
     
     melodyPitches = getMusicObjectsFromOneHots(melodylist, scorekey)
     chordsChords = getMusicObjectsFromOneHots(chordslist, scorekey)

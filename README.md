@@ -2,7 +2,9 @@
 Machine learning model for predicting chords given a melody.
 
 #### Current stage of work:  
-Testing new datasets with recently overhauled preprocessing functions (now better utilizes music21 and numpy for better speed!)
+Wrapping up Attempt 1.
+Demo video available here: https://youtu.be/8DVZycYlY7g
+Trained model file used in demo is here: https://drive.google.com/file/d/15HZvQaD8n0HS0CLTXJSNIdFnIcYyPCs6/view?usp=sharing
 
 ## Dataset and preprocessing
 
@@ -36,7 +38,12 @@ Attempts **0** and **1** at this problem uses a model that consists of 2 input l
 ## Result assessment:
 
 Attempt **0** was done using my original faulty preprocessing functions which sometimes didn't get the correct pitch class for flat notes. (This has since been fixed in Attempt 1 by fully using music21's `pitchClass` and `transpose` instead)
-Nevertheless, even with this somewhat wrong dataset, the model was able to pick up patterns with the I, IV, and V chords and place them under plausible notes. It sometimes even uses II minor chords properly. However, it seems to have a fixation with sus4 chords and repeating I chords excessively; this probably reflects the overwhelming abundance of these simple chords in the dataset. In Attempt **1**, I'll try to spruce up the dataset so that the model may learn more complex features.
+Nevertheless, even with this somewhat wrong dataset, the model was able to pick up patterns with the I, IV, and V chords and place them under plausible notes. It sometimes even uses II minor chords properly. However, it seems to have a fixation with sus4 chords and repeating I chords excessively; this probably reflects the overwhelming abundance of these simple chords in the dataset. In Attempt **1**, I have spruced up the dataset so that the model may learn more complex features, however it is still limited by its note representations.
+
+Since chord progression generation is a highly subjective task in terms of quality, a lower-loss model does **not** mean a more "pleasant-sounding" one for human ears.
+In the demo video above, I use a model that contains weights achieved somewhere in the middle of the training process;
+the loss being not too low but also not too high means that it avoids "safe" chord choices, which will likely be correct with more test samples but will sound more
+musically boring, but it also "knows" enough to be able to generate reasonable chords as opposed to just random notes.
 
 ### Future plans
 

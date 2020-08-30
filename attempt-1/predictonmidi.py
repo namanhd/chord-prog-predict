@@ -31,8 +31,12 @@ print([predfuncs.findOnes(note) for note in fullmelody])
 
 #this func edits the fullchords list in-place to include all the predicted chords,
 print("Currently predicting chords based on the key: " + scorekey.tonicPitchNameWithCase + " " + scorekey.mode)
-if cmdargs.empty == True:
-    predfuncs.seedFirstChords(fullmelody, fullchords, SUBSEQLEN)
+if cmdargs.empty == True: 
+    # For some reason the argument does not parse and is always True. 
+    # Pass and manually change this setting for now.
+    
+    #predfuncs.seedFirstChords(fullmelody, fullchords, SUBSEQLEN)
+    pass
 
 predfuncs.predictOnArrays(model, fullmelody, fullchords, SUBSEQLEN, CHORDLEN) 
 #...then using the key found above, this reconstructs a music21 score of the piece WITH the predicted chords, and writes the score to a midi file
